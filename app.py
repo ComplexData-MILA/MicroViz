@@ -50,8 +50,6 @@ hover_cols = ['Cluster Size Val','Phone Count Val', 'Loc Count Val', 'Loc Radius
 
 # read in the data files for plotting
 path_name = 'marinus_canada_full/'
-global current_sum 
-current_sum = 0
 
 if 'locanto' in path_name:
 	full_df = pd.read_csv(path_name+"locanto_7k_with_entities_LSH_labels.csv",index_col=False) # file name containing the cluster characteristics. 'plot_df.csv' from analyze_clusters.ipynb
@@ -94,7 +92,8 @@ elif 'trimmed' in path_name:
 
 elif 'full' in path_name:
 	cluster_label = 'LSH label'
-	full_df = pd.read_csv(path_name+"ht2018_no_dupl_trimmed_LSH_labels.csv",index_col=False)
+	full_df = pd.read_csv(path_name+"ht2018_no_dupl_trimmed_LSH_labels.csv",index_col=False, \
+		low_memory=False)
 
 	# top_clusters = full_df.groupby(cluster_label).size().sort_values()[-1000:].index.values
 	# full_df = full_df[full_df[cluster_label].isin(top_clusters)]
@@ -112,7 +111,6 @@ elif 'full' in path_name:
 	# full_df['city'] = full_df['location'].apply(lambda x: cities[cities.id==x].name)
 	full_df.rename(columns={'names_in_body':'name', 'location':'cleaned_loc', \
 		'phone':'phone_num', 'body':'description'}, inplace=True)
-	print(full_df.columns)
 	cities_df = full_df[['cleaned_loc', 'geolocation']].set_index('cleaned_loc')
 	marker_size = 5
 	has_labels = False
@@ -194,6 +192,9 @@ full_text_words = full_text.split()
 vocab = Counter(full_text_words)
 most_freq_words = vocab.most_common(int(0.2*len(vocab.keys())))
 add_to_stop = [w for w,f in most_freq_words]
+
+global current_sum
+current_sum = 0
 
 
 # micro_to_meta = full_df[[cluster_label, 'Meta label']].set_index(cluster_label).to_dict()['Meta label']
@@ -532,6 +533,7 @@ def update_summary(load_id, selectedData, selected_from_pair_plots, selected_fro
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
+		print('sel points', selected_points)
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
 		for item in selectedData['points']:
@@ -670,14 +672,20 @@ Input('enlarged-graph', 'selectedData'), # input: selected points from the enlar
 Input('main-plot', 'selectedData'), # input: selected points from the pair-plots
 Input('micro-cluster-scatter', 'selectedData'))
 def update_ads_over_time(load_id, selectedData, selected_from_pair_plots, selected_from_ica):
-	global current_sum
-	print(current_sum)
-	if sum(np.where(np.array(load_id)==1)[0]) != current_sum:
-	# if len(np.where(np.array(load_id)==1)[0]) != 0:
-		current_sum = sum(np.where(np.array(load_id)==1)[0])
-		print(dash.callback_context.triggered[0]['prop_id'])
+	# global current_sum
+	# print('curr_sum=', current_sum)
+	# print(sum(np.where(np.array(load_id)==1)[0]))
+	# if sum(np.where(np.array(load_id)==1)[0]) != current_sum:
+	# tt = np.where(np.array(load_id))[-1]
+	tt = np.where(np.array(pd.notna(load_id))==True)[0]
+	# print("tt=", tt, current_sum)
+	if len(tt) != 0:
+		# current_sum = tt[0]
+		# current_sum = sum(np.where(np.array(load_id)>0)[-1])
+		# print(dash.callback_context.triggered[0]['prop_id'])
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
+		print('time')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -705,6 +713,10 @@ def update_ads_over_time(load_id, selectedData, selected_from_pair_plots, select
 	else:
 		selected_df = largest_clusters
 
+	# if len(tt) == 0:
+	# 	current_sum = 0
+	# else:
+	# 	current_sum = tt[0]
 	top_clusters = selected_df.groupby(cluster_label).size().sort_values(ascending=False)[:10].index.values
 
 	selected_df = selected_df[selected_df[cluster_label].isin(top_clusters)]
@@ -781,9 +793,15 @@ Input('Img URL', 'n_clicks'),
 Input('Name', 'n_clicks')) 
 def update_meta_data(load_id, selectedData, selected_from_pair_plots, selected_from_ica, \
 	phone_num, img_url, name):
-	if len(np.where(np.array(load_id)==1)[0]) != 0:
+	# print('meta', sum(np.where(np.array(load_id)==1)[0]))
+	# global current_sum
+	tt = np.where(np.array(pd.notna(load_id))==True)[0]
+	if len(tt) != 0:
+		# current_sum = tt[0]
+	# if len(np.where(np.array(load_id)==1)[0]) != 0:
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
+		print('meta')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -811,7 +829,10 @@ def update_meta_data(load_id, selectedData, selected_from_pair_plots, selected_f
 	else:
 		selected_df = largest_clusters
 
-
+	# if len(tt) == 0:
+	# 	current_sum = 0
+	# else:
+	# 	current_sum = tt[0]
 	top_clusters = selected_df.groupby(cluster_label).size().sort_values(ascending=False)[:10].index.values
 
 	selected_df = selected_df[selected_df[cluster_label].isin(top_clusters)]
@@ -924,9 +945,16 @@ Input('enlarged-graph', 'selectedData'), # input: selected points from the enlar
 Input('main-plot', 'selectedData'), # input: selected points from the pair-plots
 Input('micro-cluster-scatter', 'selectedData'))
 def update_meta_data(load_id, selectedData, selected_from_pair_plots, selected_from_ica):
-	if len(np.where(np.array(load_id)==1)[0]) != 0:
+	# print('geo', np.array(load_id), np.where(np.array(load_id)==1))
+	# if len(np.where(np.array(load_id)==1)[0]) != 0:
+	# global current_sum
+	# print('geo', dash.callback_context.triggered[0]['prop_id'])
+	tt = np.where(np.array(pd.notna(load_id))==True)[0]
+	if len(tt) != 0:
+		# current_sum = tt[0]
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
+		print('geo')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -955,6 +983,10 @@ def update_meta_data(load_id, selectedData, selected_from_pair_plots, selected_f
 	else:
 		selected_df = largest_clusters
 
+	# if len(tt) == 0:
+	# 	current_sum = 0
+	# else:
+	# 	current_sum = tt[0]
 	top_clusters = selected_df.groupby(cluster_label).size().sort_values()[-10:].index.values
 	selected_df = selected_df[selected_df[cluster_label].isin(top_clusters)]
 	
@@ -1009,10 +1041,15 @@ Input('my-toggle-text', 'value')) # input: selected points from the pair-plots
 def update_ad_text(load_id, selectedData, selected_from_pair_plots, toggle_value):
 	# print the ad text in the data tab
 	ad_text = "var textarea = document.getElementById('text_box'); textarea.scrollTop = textarea.scrollHeight;"
-	if len(np.where(np.array(load_id)==1)[0]) != 0:
+	# if len(np.where(np.array(load_id)==1)[0]) != 0:
+	# global current_sum
+	tt = np.where(np.array(pd.notna(load_id))==True)[0]
+	if len(tt) != 0:
+		# current_sum = tt[0]
 		# print(ast.literal_eval(dash.callback_context.triggered[0]['prop_id'][:-9]))
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
+		print('templates')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -1030,6 +1067,10 @@ def update_ad_text(load_id, selectedData, selected_from_pair_plots, toggle_value
 	sel_data = full_df[full_df[cluster_label].isin(selected_points)]
 	ordered_clusters = sel_data.groupby(cluster_label).size().sort_values(ascending=False)
 
+	# if len(tt) == 0:
+	# 	current_sum = 0
+	# else:
+	# 	current_sum = tt[0]
 	txts = ""
 	for row in ordered_clusters.index:
 		if row == -1:
@@ -1054,33 +1095,6 @@ def update_ad_text(load_id, selectedData, selected_from_pair_plots, toggle_value
 
 		txts += "\n----------------------\n"
 
-	# txts = ""
-	# for row in ordered_clusters.index:
-	# 	if row == -1:
-	# 		continue
-	# 	txts += ("C"+str(row)+":\n")
-
-	# 	if toggle_value:
-	# 		if pd.isna(template_txt.loc[row]['Extra']):
-	# 			grp = sel_data[sel_data[cluster_label]==row]
-	# 			txts += grp.description.values[0]
-	# 			# txts += ("\n----\n".join(d for d in grp.description.values))
-	# 		else:
-	# 			txts += template_txt.loc[row]['Extra']
-	# 	# for grp in sel_data.groupby(cluster_label):
-		
-	# 		# txts += "\n\nCluster : C" + str(row) + "\n"
-	# 		# grp = sel_data[sel_data[cluster_label]==row]
-	# 		# txts += ("\n".join(d for d in grp.description.values))
-
-	# 	else:
-	# 		txts += template_txt.loc[row]['Template']
-
-		# txts += "\n----------------------\n"
-
-		# print('Txt:')
-		# print(sel_data[cluster_label].unique(), sel_data[cluster_label].nunique(), len(selected_points))
-	
 	return txts, ad_text
 
 '''
@@ -1094,9 +1108,14 @@ Input('enlarged-graph','selectedData'), # input: selected points from the enlarg
 Input('main-plot', 'selectedData'),
 Input('micro-cluster-scatter', 'selectedData'))
 def update_word_cloudes(load_id, selectedData, selected_from_pair_plots, selected_from_ica):
-	if len(np.where(np.array(load_id)==1)[0]) != 0:
+	# if len(np.where(np.array(load_id)==1)[0]) != 0:
+	# global current_sum
+	tt = np.where(np.array(pd.notna(load_id))==True)[0]
+	if len(tt) != 0:
+		# current_sum = tt[0]
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
+		print('cloud')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -1114,6 +1133,10 @@ def update_word_cloudes(load_id, selectedData, selected_from_pair_plots, selecte
 	else:
 		selected_points = largest_clusters[cluster_label].unique()
 
+	# if len(tt) == 0:
+	# 	current_sum = 0
+	# else:
+	# 	current_sum = tt[0]
 	# wc_df = full_df[full_df[cluster_label].isin(selected_points)].text.values
 	wc_df = template_txt.loc[selected_points].Template.values
 	text = "\n".join(t for t in wc_df if not pd.isna(t))
@@ -1619,7 +1642,7 @@ def highlight_same_clusters(selected_clustering, clickData, selected_clusters, s
 			labels = selected_feats
 		else:
 			labels = selected_feats
-	print(selected_clustering)
+	# print(selected_clustering)
 	if selected_clusters and selected_clustering==0: # if some selection of points has been made
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
 		for item in selected_clusters['points']:
@@ -1635,7 +1658,7 @@ def highlight_same_clusters(selected_clustering, clickData, selected_clusters, s
 			X = classifier_df[dimension_cols].to_numpy()
 			Y = classifier_df['Y'].values
 			important_features = np.array(dimension_cols)[get_feature_weights(X, Y)]
-			print("Imp feats", important_features)
+			# print("Imp feats", important_features)
 
 			if len(selected_feats) == len(dimension_cols):
 				selected_feats = important_features
@@ -1660,7 +1683,7 @@ def highlight_same_clusters(selected_clustering, clickData, selected_clusters, s
 			X = classifier_df[dimension_cols].to_numpy()
 			Y = classifier_df['Y'].values
 			important_features = np.array(dimension_cols)[get_feature_weights(X, Y)]
-			print("imp features = ", important_features)
+			# print("imp features = ", important_features)
 
 			if len(selected_feats) == len(dimension_cols):
 				selected_feats = important_features
