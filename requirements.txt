@@ -443,6 +443,7 @@ Werkzeug==2.0.2
 widgetsnbextension==3.5.1
 wikipedia2vec==1.0.4
 word2number==1.1
+wordcloud
 wrapt==1.12.1
 xarray==0.20.1
 xkit==0.0.0
