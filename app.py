@@ -533,7 +533,6 @@ def update_summary(load_id, selectedData, selected_from_pair_plots, selected_fro
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
-		print('sel points', selected_points)
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
 		for item in selectedData['points']:
@@ -685,7 +684,6 @@ def update_ads_over_time(load_id, selectedData, selected_from_pair_plots, select
 		# print(dash.callback_context.triggered[0]['prop_id'])
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
-		print('time')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -801,7 +799,6 @@ def update_meta_data(load_id, selectedData, selected_from_pair_plots, selected_f
 	# if len(np.where(np.array(load_id)==1)[0]) != 0:
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
-		print('meta')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -954,7 +951,6 @@ def update_meta_data(load_id, selectedData, selected_from_pair_plots, selected_f
 		# current_sum = tt[0]
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
-		print('geo')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -1036,9 +1032,10 @@ Output('javascriptLog','run'), # output: scroll bar for text box
 Input({'type': 'dynamic-button', 'index': ALL}, "n_clicks"),
 # Input('tabs','active_tab'), # input: currently active tab
 Input('enlarged-graph','selectedData'), # input: selected points from the enlarged scatter-plot (TSNE/UMAP)
+Input('micro-cluster-scatter','selectedData'),
 Input('main-plot', 'selectedData'),
 Input('my-toggle-text', 'value')) # input: selected points from the pair-plots
-def update_ad_text(load_id, selectedData, selected_from_pair_plots, toggle_value):
+def update_ad_text(load_id, selectedData, sel_from_ica, selected_from_pair_plots, toggle_value):
 	# print the ad text in the data tab
 	ad_text = "var textarea = document.getElementById('text_box'); textarea.scrollTop = textarea.scrollHeight;"
 	# if len(np.where(np.array(load_id)==1)[0]) != 0:
@@ -1049,13 +1046,15 @@ def update_ad_text(load_id, selectedData, selected_from_pair_plots, toggle_value
 		# print(ast.literal_eval(dash.callback_context.triggered[0]['prop_id'][:-9]))
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
-		print('templates')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
 		for item in selectedData['points']:
 			selected_points.append(item['customdata'][-1])
-
+	elif sel_from_ica:
+		selected_points = []
+		for item in sel_from_ica['points']:
+			selected_points.append(item['customdata'][-1])
 	elif selected_from_pair_plots:
 		selected_points = []
 		for item in selected_from_pair_plots['points']:
@@ -1067,10 +1066,6 @@ def update_ad_text(load_id, selectedData, selected_from_pair_plots, toggle_value
 	sel_data = full_df[full_df[cluster_label].isin(selected_points)]
 	ordered_clusters = sel_data.groupby(cluster_label).size().sort_values(ascending=False)
 
-	# if len(tt) == 0:
-	# 	current_sum = 0
-	# else:
-	# 	current_sum = tt[0]
 	txts = ""
 	for row in ordered_clusters.index:
 		if row == -1:
@@ -1115,7 +1110,6 @@ def update_word_cloudes(load_id, selectedData, selected_from_pair_plots, selecte
 		# current_sum = tt[0]
 		selected = json.loads(dash.callback_context.triggered[0]['prop_id'][:-9])['index'][4:]
 		selected_points = pkl.load(open(path_name+"snapshots/"+selected+".pkl",'rb'))['clusters']
-		print('cloud')
 		selected_df = full_df[full_df[cluster_label].isin(selected_points)]
 	elif selectedData:
 		selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
@@ -1598,7 +1592,6 @@ def enlarge_subplot(selected_clustering, clickData, selectedData, mini_dist_ind,
 		if selectedData: # some points in main plot have been selected
 			selected_points = [] # the selection info is in JSON format and we need to extract the index of points selected
 			for item in selectedData['points']:
-				print(item)
 				selected_points.append(item['customdata'][-1])
 			dd.set_index('cluster_id', drop=False, inplace=True)
 			fig.add_traces(
