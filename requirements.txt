@@ -439,7 +439,7 @@ wcwidth==0.2.5
 webencodings==0.5.1
 websocket-client==1.2.3
 websockets==8.1
-Werkzeug==2.0.2
+Werkzeug==2.2.3
 widgetsnbextension==3.5.1
 wikipedia2vec==1.0.4
 word2number==1.1
