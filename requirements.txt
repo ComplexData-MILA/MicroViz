@@ -230,7 +230,7 @@ nest-asyncio==1.4.3
 netifaces==0.10.4
 networkx==2.5
 nf1==0.0.3
-nltk==3.5
+nltk==3.6.6
 notebook==6.1.6
 notify2==0.3
 numba==0.52.0
