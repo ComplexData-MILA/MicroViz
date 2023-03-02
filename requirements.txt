@@ -61,7 +61,7 @@ commonregex==1.5.4
 configparser==5.0.2
 conllu==4.4
 count-dict==1.1.1
-cryptography==2.8
+cryptography==39.0.1
 cupshelpers==1.0
 cycler==0.10.0
 cymem==2.0.5
